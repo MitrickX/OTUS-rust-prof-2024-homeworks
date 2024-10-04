@@ -22,7 +22,7 @@ fn main() {
         0.0,
     );
 
-    let thermo = SmartThermometer::new("room1_thermo_1", 19.2);
+    let thermo = SmartThermometer::new("room1_thermo_1", "Govee WiFi Hygrometer Thermometer Sensor 3 Pack, Indoor Wireless Smart Temperature Humidity Monitor with Remote App Notification Alert, 2 Years Data Storage Export, for Home, Greenhouse", 19.2);
 
     // Инициализация дома
     let house = SmartHouse::new(
