@@ -1,11 +1,13 @@
 use hw4::{
-    device::{SmartSocket, SmartThermometer},
-    info::BorrowingDeviceInfoProvider,
-    info::OwningDeviceInfoProvider,
+    device::{
+        info::{BorrowingDeviceInfoProvider, OwningDeviceInfoProvider},
+        SmartSocket, SmartThermometer,
+    },
     SmartHouse,
 };
 use std::collections::HashMap;
 
+// Пример использования
 fn main() {
     // Инициализация устройств
     let socket1 = SmartSocket::new(

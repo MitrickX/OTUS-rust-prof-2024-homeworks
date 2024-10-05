@@ -1,7 +1,6 @@
 pub mod device;
-pub mod info;
 
-use info::DeviceInfoProvider;
+use device::info::DeviceInfoProvider;
 use std::collections::HashMap;
 
 pub struct SmartHouse {
@@ -52,5 +51,46 @@ impl SmartHouse {
             .filter(|s| !s.is_empty())
             .collect::<Vec<String>>()
             .join("\n")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    struct TestInfoProvider {}
+
+    impl DeviceInfoProvider for TestInfoProvider {
+        fn info(&self, location_name: &str, device_name: &str) -> Option<String> {
+            Some(format!(
+                "location: {}, device: {}",
+                location_name, device_name
+            ))
+        }
+    }
+
+    #[test]
+    fn test_create_report() {
+        let house = SmartHouse::new(
+            "my smart house",
+            HashMap::from([
+                ("room1", vec!["room1_socket_1", "room1_thermo_1"]),
+                ("room2", vec!["room2_socket_2"]),
+            ]),
+        );
+
+        let info_provider = TestInfoProvider {};
+
+        let report = house.create_report(&info_provider);
+        let mut report_lines = report.split("\n").collect::<Vec<&str>>();
+        report_lines.sort();
+        let report = report_lines.join("\n");
+
+        assert_eq!(
+            r#"location: room1, device: room1_socket_1
+location: room1, device: room1_thermo_1
+location: room2, device: room2_socket_2"#,
+            report
+        )
     }
 }

@@ -1,3 +1,5 @@
+pub mod info;
+
 use std::fmt;
 
 pub struct SmartSocket {
@@ -51,7 +53,7 @@ impl fmt::Display for SmartSocket {
         f.pad("")?;
         write!(
             f,
-            "Current state:: {}, {} Volts",
+            "Current state: {}, {} Volts",
             if self.is_on { "on" } else { "off" },
             self.current_power
         )?;
