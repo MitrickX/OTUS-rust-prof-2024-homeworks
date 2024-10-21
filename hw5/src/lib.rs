@@ -82,7 +82,7 @@ mod tests {
         let info_provider = TestInfoProvider {};
 
         let report = house.create_report(&info_provider);
-        let mut report_lines = report.split("\n").collect::<Vec<&str>>();
+        let mut report_lines = report.split('\n').collect::<Vec<&str>>();
         report_lines.sort();
         let report = report_lines.join("\n");
 

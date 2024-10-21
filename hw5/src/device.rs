@@ -115,23 +115,23 @@ mod tests_smart_socket {
 
         assert_eq!(socket1.name(), "socket1");
         assert_eq!(socket1.description(), "description_socket1");
-        assert_eq!(socket1.is_on(), true);
+        assert!(socket1.is_on());
         assert_eq!(socket1.current_power(), 220.0);
 
         assert_eq!(socket2.name(), "socket2");
         assert_eq!(socket2.description(), "description_socket2");
-        assert_eq!(socket2.is_on(), false);
+        assert!(!socket2.is_on());
         assert_eq!(socket2.current_power(), 0.0);
     }
 
     #[test]
     fn test_turn_of_off() {
         let mut socket = SmartSocket::new("socket", "description_socket", true, 220.0);
-        assert_eq!(socket.is_on(), true);
+        assert!(socket.is_on());
         socket.turn_off();
-        assert_eq!(socket.is_on(), false);
+        assert!(!socket.is_on());
         socket.turn_on();
-        assert_eq!(socket.is_on(), true);
+        assert!(socket.is_on());
     }
 }
 
