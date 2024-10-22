@@ -27,7 +27,7 @@ fn main() {
     let thermo = SmartThermometer::new("room1_thermo_1", "Govee WiFi Hygrometer Thermometer Sensor 3 Pack, Indoor Wireless Smart Temperature Humidity Monitor with Remote App Notification Alert, 2 Years Data Storage Export, for Home, Greenhouse", 19.2);
 
     // Инициализация дома
-    let house = SmartHouse::new(
+    let house_1 = SmartHouse::new(
         "my smart house",
         HashMap::from([
             ("room1", vec!["room1_socket_1", "room1_thermo_1"]),
@@ -37,11 +37,11 @@ fn main() {
 
     // Строим отчёт с использованием `OwningDeviceInfoProvider`.
     let info_provider_1 = OwningDeviceInfoProvider::new(socket1);
-    let report1 = house.create_report(&info_provider_1);
+    let report_1 = house_1.create_report(&info_provider_1);
 
     // Строим отчёт с использованием `BorrowingDeviceInfoProvider`.
     let info_provider_2 = BorrowingDeviceInfoProvider::new(&socket2, &thermo);
-    let report2 = house.create_report(&info_provider_2);
+    let report_2 = house_1.create_report(&info_provider_2);
 
     // Выводим отчёты на экран:
     println!(
@@ -50,7 +50,10 @@ fn main() {
 
 {}
 "#,
-        report1
+        match report_1 {
+            Ok(r) => r,
+            Err(err) => format!("{:?}", err),
+        }
     );
 
     println!(
@@ -59,6 +62,33 @@ fn main() {
 
 {}
 "#,
-        report2
+        match report_2 {
+            Ok(r) => r,
+            Err(err) => format!("{:?}", err),
+        }
+    );
+
+    let house_2 = SmartHouse::new(
+        "my smart house",
+        HashMap::from([
+            ("room1", vec!["room1_thermo_1"]),
+            ("room2", vec!["room2_socket_2"]),
+        ]),
+    );
+
+    // Строим отчёт с использованием `BorrowingDeviceInfoProvider`.
+    let info_provider_3 = BorrowingDeviceInfoProvider::new(&socket2, &thermo);
+    let report_3 = house_2.create_report(&info_provider_3);
+
+    println!(
+        r#"
+=== Report #3: ===
+
+{}
+"#,
+        match report_3 {
+            Ok(r) => r,
+            Err(err) => format!("{:?}", err),
+        }
     );
 }
