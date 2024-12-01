@@ -86,6 +86,10 @@ impl SmartThermometer {
     pub fn current_temperature(&self) -> f64 {
         self.current_temperature
     }
+
+    pub fn set_temperature(&mut self, val: f64) {
+        self.current_temperature = val
+    }
 }
 
 impl fmt::Display for SmartThermometer {
@@ -146,5 +150,13 @@ mod tests_smart_thermometr {
         assert_eq!(thermo.name(), "thermo");
         assert_eq!(thermo.description(), "thermo_description");
         assert_eq!(thermo.current_temperature(), 32.0);
+    }
+
+    #[test]
+    fn test_set_temperature() {
+        let mut thermo = SmartThermometer::new("thermo", "thermo_description", 32.0);
+
+        thermo.set_temperature(20.2);
+        assert_eq!(thermo.current_temperature(), 20.2);
     }
 }
