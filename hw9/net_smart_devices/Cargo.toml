@@ -1,0 +1,8 @@
+[package]
+name = "net_smart_devices"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+smart_devices = { path = "../smart_devices" }
+stp = { path = "../stp" }
