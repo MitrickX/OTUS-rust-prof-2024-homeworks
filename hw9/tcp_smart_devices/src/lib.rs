@@ -3,6 +3,8 @@ use std::net::ToSocketAddrs;
 use stp::error::{ConnectError, RequestError};
 use stp::{client::StpClient, server::StpServer};
 
+pub mod asnc;
+
 #[derive(Debug, PartialEq)]
 pub enum Command {
     SmartSocketOn,

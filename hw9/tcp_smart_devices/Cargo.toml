@@ -6,3 +6,10 @@ edition = "2021"
 [dependencies]
 smart_devices = { path = "../smart_devices" }
 stp = { path = "../stp" }
+tokio = { version = "1.42.0", features = [
+    "net",
+    "io-util",
+    "rt",
+    "macros",
+    "sync",
+] }
