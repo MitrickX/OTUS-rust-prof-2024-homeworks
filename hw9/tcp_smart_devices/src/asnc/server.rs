@@ -8,6 +8,16 @@ pub struct AsyncTcpSmartSocket {
     inner: Arc<RwLock<SmartSocket>>,
 }
 
+impl AsyncTcpSmartSocket {
+    pub fn new(name: &str, description: &str, is_on: bool, current_power: f64) -> Self {
+        let socket = SmartSocket::new(name, description, is_on, current_power);
+
+        Self {
+            inner: Arc::new(RwLock::new(socket)),
+        }
+    }
+}
+
 pub trait Server {
     /// Run server on tcp address
     fn serve(
@@ -21,11 +31,11 @@ impl Server for AsyncTcpSmartSocket {
         &self,
         addr: &str,
     ) -> impl std::future::Future<Output = Result<(), Box<dyn std::error::Error>>> + Send {
-        server(self.inner.clone(), addr)
+        serve(self.inner.clone(), addr)
     }
 }
 
-async fn server(
+async fn serve(
     socket: Arc<RwLock<SmartSocket>>,
     addr: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
@@ -47,15 +57,14 @@ async fn server(
     }
 }
 
-async fn handle_request(socket: Arc<RwLock<SmartSocket>>, request: Request) -> String {
+async fn handle_request(socket: Arc<RwLock<SmartSocket>>, request: Request) -> Response {
     match request.0 {
         Command::SmartSocketOn => socket.clone().write().await.turn_on(),
         Command::SmartSocketOff => socket.clone().write().await.turn_off(),
         Command::SmartSocketInfo => (),
     }
 
-    let response = Response(format!("{}", socket.clone().read().await));
-    encode_response(response)
+    Response(format!("{}", socket.clone().read().await))
 }
 
 async fn handle_connection(socket: Arc<RwLock<SmartSocket>>, mut connection: StpConnection) {
@@ -64,7 +73,7 @@ async fn handle_connection(socket: Arc<RwLock<SmartSocket>>, mut connection: Stp
         let process_result = connection
             .process_request_async(|req| async move {
                 match decode_request(&req) {
-                    Some(request) => handle_request(socket.clone(), request).await,
+                    Some(request) => encode_response(handle_request(socket.clone(), request).await),
                     None => "unknown command".to_owned(),
                 }
             })
@@ -74,5 +83,88 @@ async fn handle_connection(socket: Arc<RwLock<SmartSocket>>, mut connection: Stp
             eprint!("Error processing request: {}", e);
             break;
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn serve_turn_on() {
+        let tcp_smart_socket = AsyncTcpSmartSocket::new(
+            "tcp_smart_socket",
+            "this is smart socket works by tcp protocol",
+            false,
+            220.0,
+        );
+
+        let result = handle_request(
+            tcp_smart_socket.inner.clone(),
+            Request(Command::SmartSocketOn),
+        )
+        .await;
+
+        assert_eq!(
+            Response(
+                r#"Name: tcp_smart_socket
+Description: this is smart socket works by tcp protocol
+Current state: on, 220 Volts"#
+                    .to_owned()
+            ),
+            result
+        );
+    }
+
+    #[tokio::test]
+    async fn serve_turn_off() {
+        let tcp_smart_socket = AsyncTcpSmartSocket::new(
+            "tcp_smart_socket",
+            "this is smart socket works by tcp protocol",
+            true,
+            230.0,
+        );
+
+        let result = handle_request(
+            tcp_smart_socket.inner.clone(),
+            Request(Command::SmartSocketOff),
+        )
+        .await;
+
+        assert_eq!(
+            Response(
+                r#"Name: tcp_smart_socket
+Description: this is smart socket works by tcp protocol
+Current state: off, 230 Volts"#
+                    .to_owned()
+            ),
+            result
+        );
+    }
+
+    #[tokio::test]
+    async fn serve_turn_info() {
+        let tcp_smart_socket = AsyncTcpSmartSocket::new(
+            "tcp_smart_socket",
+            "this is smart socket works by tcp protocol",
+            true,
+            233.3,
+        );
+
+        let result = handle_request(
+            tcp_smart_socket.inner.clone(),
+            Request(Command::SmartSocketInfo),
+        )
+        .await;
+
+        assert_eq!(
+            Response(
+                r#"Name: tcp_smart_socket
+Description: this is smart socket works by tcp protocol
+Current state: on, 233.3 Volts"#
+                    .to_owned()
+            ),
+            result
+        );
     }
 }
