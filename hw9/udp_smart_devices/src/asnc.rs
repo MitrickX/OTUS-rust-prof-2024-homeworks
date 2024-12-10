@@ -1,14 +1,16 @@
 use smart_devices::device::SmartThermometer;
 use std::future::Future;
 use std::{
-    net::{ToSocketAddrs, UdpSocket},
     sync::{
         atomic::{AtomicBool, Ordering},
         Arc,
     },
     time::Duration,
 };
-use tokio::sync::Mutex;
+use tokio::{
+    net::{ToSocketAddrs, UdpSocket},
+    sync::Mutex,
+};
 extern crate tokio;
 
 type AMutex<T> = Arc<Mutex<T>>;
@@ -40,7 +42,6 @@ pub trait Streaming {
         &self,
         buf: &mut [u8],
     ) -> impl Future<Output = Result<usize, std::io::Error>> + Send;
-    fn set_timeout(&self, dur: Duration) -> std::io::Result<()>;
 }
 
 pub trait Server {
@@ -57,8 +58,6 @@ impl Server for StreamingSmartThermometer {
         streaming: S,
         dur: Duration,
     ) -> std::io::Result<()> {
-        streaming.set_timeout(dur)?;
-
         let finished = self.finished.clone();
         let thermometer = self.thermometer.clone();
         tokio::spawn(async move {
@@ -99,11 +98,8 @@ struct UpdStreaming(UdpSocket);
 
 impl Streaming for UpdStreaming {
     async fn recv_from(&self, buf: &mut [u8]) -> std::io::Result<usize> {
-        let result = self.0.recv_from(buf)?;
+        let result = self.0.recv_from(buf).await?;
         Ok(result.0)
-    }
-    fn set_timeout(&self, dur: Duration) -> std::io::Result<()> {
-        self.0.set_read_timeout(Some(dur))
     }
 }
 
@@ -127,8 +123,7 @@ impl UdpSmartThermometer {
         address: A,
         dur: Duration,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let socket = UdpSocket::bind(address)?;
-        socket.set_nonblocking(false)?;
+        let socket = UdpSocket::bind(address).await?;
         let streaming = UpdStreaming(socket);
         self.0.run(streaming, dur).await?;
         Ok(())
@@ -141,17 +136,21 @@ pub struct UdpSmartThermometerClient<A: ToSocketAddrs> {
 }
 
 impl<A: ToSocketAddrs> UdpSmartThermometerClient<A> {
-    pub fn new(bind_address: A, reciever_address: A) -> Result<Self, Box<dyn std::error::Error>> {
-        let socket = UdpSocket::bind(bind_address)?;
+    pub async fn new(
+        bind_address: A,
+        reciever_address: A,
+    ) -> Result<Self, Box<dyn std::error::Error>> {
+        let socket = UdpSocket::bind(bind_address).await?;
         Ok(Self {
             socket,
             reciever_address,
         })
     }
 
-    pub fn send_temperature(&self, val: f64) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn send_temperature(&self, val: f64) -> Result<(), Box<dyn std::error::Error>> {
         self.socket
-            .send_to(val.to_be_bytes().as_slice(), &self.reciever_address)?;
+            .send_to(val.to_be_bytes().as_slice(), &self.reciever_address)
+            .await?;
 
         Ok(())
     }
@@ -176,9 +175,6 @@ mod tests {
             let data = self.receiver.clone().lock().await.recv().await.unwrap();
             buf.copy_from_slice(&data);
             Ok(8)
-        }
-        fn set_timeout(&self, _dur: Duration) -> std::io::Result<()> {
-            Ok(())
         }
     }
 
