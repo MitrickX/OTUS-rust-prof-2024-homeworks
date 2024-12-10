@@ -224,6 +224,7 @@ name = "udp_smart_devices"
 version = "0.1.0"
 dependencies = [
  "smart_devices",
+ "tokio",
 ]
 
 [[package]]
