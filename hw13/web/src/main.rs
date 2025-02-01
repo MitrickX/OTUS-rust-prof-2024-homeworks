@@ -29,6 +29,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             .service(get_rooms)
             .service(add_device)
             .service(delete_device)
+            .service(get_devices)
             .default_service(web::to(default_response))
     })
     .bind("0.0.0.0:8080")?
@@ -102,5 +103,21 @@ async fn delete_device(
         house_name: data.read().unwrap().name().to_owned(),
         room_name: device_request.room.clone(),
         devices: data.read().unwrap().devices(&device_request.room).collect(),
+    })
+}
+
+#[actix_web::get("/devices")]
+async fn get_devices(
+    devices_request: web::Json<dto::DevicesListRequest>,
+    data: SmartHouseData,
+) -> HttpResponse {
+    HttpResponse::Ok().json(dto::DevicesListResponse {
+        house_name: data.read().unwrap().name().to_owned(),
+        room_name: devices_request.room.clone(),
+        devices: data
+            .read()
+            .unwrap()
+            .devices(&devices_request.room)
+            .collect(),
     })
 }

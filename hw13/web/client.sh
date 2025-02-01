@@ -49,6 +49,13 @@ delete_device() {
     do_post
 }
 
+get_devices() {
+    url="devices"
+    data="{\"room\":\"$1\"}"
+
+    do_get
+}
+
 case "$1" in
     add_room)
         add_room "$2"
@@ -64,6 +71,9 @@ case "$1" in
         ;;
     delete_device)
         delete_device "$2" "$3"
+        ;;
+    get_devices)
+        get_devices "$2"
         ;;
     *)
         echo "Unknown command"
