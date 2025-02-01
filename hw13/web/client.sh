@@ -35,25 +35,39 @@ get_rooms() {
     do_get
 }
 
-add_device() {
-    url="devices/add"
+add_room_device() {
+    url="room/devices/add"
     data="{\"room\":\"$1\", \"device\":\"$2\"}"
 
     do_post
 }
 
-delete_device() {
-    url="devices/delete"
+delete_room_device() {
+    url="room/devices/delete"
     data="{\"room\":\"$1\", \"device\":\"$2\"}"
 
     do_post
 }
 
-get_devices() {
-    url="devices"
+get_room_devices() {
+    url="room/devices"
     data="{\"room\":\"$1\"}"
 
     do_get
+}
+
+declare_socket() {
+    url="devices/socket/declare"
+    data="{\"name\":\"$1\", \"description\":\"$2\", \"is_on\":$3, \"current_power\":$4}"
+
+    do_post
+}
+
+declare_thermometer() {
+    url="devices/thermometer/declare"
+    data="{\"name\":\"$1\", \"description\":\"$2\", \"current_temperature\":$3}"
+
+    do_post
 }
 
 case "$1" in
@@ -66,14 +80,20 @@ case "$1" in
     get_rooms)
         get_rooms
         ;;
-    add_device)
-        add_device "$2" "$3"
+    add_room_device)
+        add_room_device "$2" "$3"
         ;;
-    delete_device)
-        delete_device "$2" "$3"
+    delete_room_device)
+        delete_room_device "$2" "$3"
         ;;
-    get_devices)
-        get_devices "$2"
+    get_room_devices)
+        get_room_devices "$2"
+        ;;
+    declare_socket)
+        declare_socket "$2" "$3" "$4" "$5"
+        ;;
+    declare_thermometer)
+        declare_thermometer "$2" "$3" "$4"
         ;;
     *)
         echo "Unknown command"
