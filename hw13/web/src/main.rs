@@ -27,7 +27,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
             .service(add_room)
             .service(delete_room)
             .service(get_rooms)
-            // .service(add_device)
+            .service(add_device)
+            .service(delete_device)
             .default_service(web::to(default_response))
     })
     .bind("0.0.0.0:8080")?
@@ -72,9 +73,34 @@ async fn get_rooms(data: SmartHouseData) -> HttpResponse {
     })
 }
 
-// #[actix_web::post("/devices/add")]
-// async fn add_device(room: String, device: String, data: SmartHouseData) -> HttpResponse {
-//     println!("Adding device: {} to room: {}", &device, &room);
-//     data.write().unwrap().add_device(&room, &device);
-//     HttpResponse::Ok().body(format!("Device {} added to room {}\n", &device, &room))
-// }
+#[actix_web::post("/devices/add")]
+async fn add_device(
+    device_request: web::Json<dto::DeviceRequest>,
+    data: SmartHouseData,
+) -> HttpResponse {
+    data.write()
+        .unwrap()
+        .add_device(&device_request.room, &device_request.device);
+
+    HttpResponse::Ok().json(dto::DeviceResponse {
+        house_name: data.read().unwrap().name().to_owned(),
+        room_name: device_request.room.clone(),
+        devices: data.read().unwrap().devices(&device_request.room).collect(),
+    })
+}
+
+#[actix_web::post("/devices/delete")]
+async fn delete_device(
+    device_request: web::Json<dto::DeviceRequest>,
+    data: SmartHouseData,
+) -> HttpResponse {
+    data.write()
+        .unwrap()
+        .delete_device(&device_request.room, &device_request.device);
+
+    HttpResponse::Ok().json(dto::DeviceResponse {
+        house_name: data.read().unwrap().name().to_owned(),
+        room_name: device_request.room.clone(),
+        devices: data.read().unwrap().devices(&device_request.room).collect(),
+    })
+}

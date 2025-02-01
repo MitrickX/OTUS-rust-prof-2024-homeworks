@@ -60,7 +60,8 @@ impl SmartHouse {
     pub fn add_room(&mut self, room: &str) {
         let room = room.to_owned();
         if !self.room_names.contains(&room) {
-            self.room_names.push(room);
+            self.room_names.push(room.clone());
+            self.devices.insert(room, Vec::new());
         }
     }
 
@@ -298,6 +299,18 @@ location: room2, device: room2_socket_2"#,
 
         let devices: Vec<String> = house.devices("room3").collect();
         assert_eq!(Vec::<String>::new(), devices);
+    }
+
+    #[test]
+    fn test_add_device_to_empty() {
+        let mut house = SmartHouse::new_empty("my smart house");
+
+        house.add_room("room1");
+        house.add_device("room1", "device1");
+        let mut devices: Vec<String> = house.devices("room1").collect();
+        devices.sort();
+
+        assert_eq!(vec!["device1"], devices);
     }
 
     #[test]

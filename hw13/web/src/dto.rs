@@ -17,3 +17,16 @@ pub struct RoomsListResponse {
     pub house_name: String,
     pub rooms: Vec<String>,
 }
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct DeviceRequest {
+    pub room: String,
+    pub device: String,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct DeviceResponse {
+    pub house_name: String,
+    pub room_name: String,
+    pub devices: Vec<String>,
+}
