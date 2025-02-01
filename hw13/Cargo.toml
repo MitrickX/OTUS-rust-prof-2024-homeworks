@@ -1,0 +1,11 @@
+[workspace]
+
+resolver = "2"
+
+members = [
+    "stp",
+    "smart_devices",
+    "tcp_smart_devices",
+    "udp_smart_devices",
+    "web",
+]
