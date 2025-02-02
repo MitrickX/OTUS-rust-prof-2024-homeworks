@@ -45,10 +45,6 @@ impl<'a, 'b> BorrowingDeviceInfoProvider<'a, 'b> {
 
 impl<'a, 'b> DeviceInfoProvider for BorrowingDeviceInfoProvider<'a, 'b> {
     fn info(&self, location_name: &str, device_name: &str) -> Option<String> {
-        println!(
-            "location_name: {}, device_name: {}",
-            location_name, device_name
-        );
         if self.socket.name() == device_name {
             return Some(format!(
                 r#"Location: {}

@@ -46,36 +46,6 @@ pub struct RoomDevicesListResponse {
 }
 
 #[derive(Clone, Serialize, Deserialize)]
-pub struct DeclareSocketRequest {
-    pub name: String,
-    pub description: String,
-    pub is_on: bool,
-    pub current_power: f64,
-}
-
-#[derive(Clone, Serialize, Deserialize)]
-pub struct DeclareSocketResponse {
-    pub name: String,
-    pub description: String,
-    pub is_on: bool,
-    pub current_power: f64,
-}
-
-#[derive(Clone, Serialize, Deserialize)]
-pub struct DeclareThermometerRequest {
-    pub name: String,
-    pub description: String,
-    pub current_temperature: f64,
-}
-
-#[derive(Clone, Serialize, Deserialize)]
-pub struct DeclareThermometerResponse {
-    pub name: String,
-    pub description: String,
-    pub current_temperature: f64,
-}
-
-#[derive(Clone, Serialize, Deserialize)]
 pub struct SocketModel {
     pub name: String,
     pub description: String,
@@ -97,11 +67,9 @@ pub struct ReportRequest {
 }
 
 #[derive(Clone, Serialize, Deserialize)]
-pub struct ReportSuccessResponse {
-    pub report: String,
-}
-
-#[derive(Clone, Serialize, Deserialize)]
-pub struct ReportErrorResponse {
-    pub error: String,
+pub enum ReportResponse {
+    #[serde(rename = "report")]
+    Success(String),
+    #[serde(rename = "error")]
+    Error(String),
 }

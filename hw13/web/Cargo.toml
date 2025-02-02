@@ -9,3 +9,7 @@ serde = { version = "1.0.217", features = ["derive"] }
 serde_json = "1.0.138"
 smart_devices = { path = "../smart_devices" }
 thiserror = "2.0.11"
+
+[dev-dependencies]
+reqwest = { version = "0.12.12", features = ["json"] }
+tokio = { version = "1.43.0", features = ["full"] }

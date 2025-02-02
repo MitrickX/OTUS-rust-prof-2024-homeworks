@@ -35,7 +35,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         App::new()
             .wrap_fn(|req, srv| {
                 let addr = req.peer_addr();
-                println!("From middleware fn: Hello {addr:?}");
+                println!("Req: {req:?} from {addr:?}");
                 srv.call(req)
             })
             .app_data(Data::clone(&data))
@@ -183,9 +183,7 @@ async fn get_report(report_request: web::Json<dto::ReportRequest>, data: AppData
         .create_report(&info_provider);
 
     match report_result {
-        Ok(report) => HttpResponse::Ok().json(dto::ReportSuccessResponse { report }),
-        Err(error) => HttpResponse::Ok().json(dto::ReportErrorResponse {
-            error: error.to_string(),
-        }),
+        Ok(report) => HttpResponse::Ok().json(dto::ReportResponse::Success(report)),
+        Err(error) => HttpResponse::Ok().json(dto::ReportResponse::Error(error.to_string())),
     }
 }
