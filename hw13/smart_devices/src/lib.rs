@@ -101,21 +101,17 @@ impl SmartHouse {
         room_devices: &[String],
         info_provider: &I,
     ) -> Result<String> {
-        let device_reports = match room_devices
+        let device_reports = room_devices
             .iter()
-            .map(move |device_name| info_provider.info(room_name, device_name))
-            .try_fold(Vec::<String>::new(), |mut acc, x| match x {
-                Some(s) => {
-                    acc.push(s);
-                    ControlFlow::Continue(acc)
-                }
-                None => ControlFlow::Break(()),
-            }) {
-            ControlFlow::Continue(v) => v,
-            ControlFlow::Break(_) => {
-                return Err(SmartHouseError::ReportError);
-            }
-        };
+            .flat_map(move |device_name| info_provider.info(room_name, device_name))
+            .fold(Vec::<String>::new(), |mut acc, s| {
+                acc.push(s);
+                acc
+            });
+
+        if device_reports.is_empty() {
+            return Err(SmartHouseError::ReportError);
+        }
 
         Ok(device_reports.join("\n"))
     }

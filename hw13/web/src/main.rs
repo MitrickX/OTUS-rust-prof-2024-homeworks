@@ -5,11 +5,10 @@ use actix_web::{
 };
 use serde_json::json;
 use smart_devices::{
-    device::{SmartSocket, SmartThermometer},
+    device::{info::BorrowingDeviceInfoProvider, SmartSocket, SmartThermometer},
     SmartHouse,
 };
 use std::{
-    collections::HashMap,
     error::Error,
     sync::{Arc, RwLock},
 };
@@ -20,9 +19,8 @@ type ArwLock<T> = Arc<RwLock<T>>;
 
 pub struct AppState {
     pub smart_house: ArwLock<SmartHouse>,
-    pub declared_sockets: ArwLock<HashMap<String, SmartSocket>>,
-    pub declared_thermometers: ArwLock<HashMap<String, SmartThermometer>>,
 }
+
 type AppData = Data<AppState>;
 
 #[actix_web::main]
@@ -31,8 +29,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let data = Data::new(AppState {
         smart_house: Arc::new(RwLock::new(house)),
-        declared_sockets: Arc::new(RwLock::new(HashMap::new())),
-        declared_thermometers: Arc::new(RwLock::new(HashMap::new())),
     });
 
     HttpServer::new(move || {
@@ -49,8 +45,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             .service(add_room_device)
             .service(delete_room_device)
             .service(get_room_devices)
-            .service(declare_socket)
-            .service(declare_thermometer)
+            .service(get_report)
             .default_service(web::to(default_response))
     })
     .bind("0.0.0.0:8080")?
@@ -165,53 +160,32 @@ async fn get_room_devices(
     })
 }
 
-#[actix_web::post("/devices/socket/declare")]
-async fn declare_socket(
-    declare_socket_request: web::Json<dto::DeclareSocketRequest>,
-    data: AppData,
-) -> HttpResponse {
+#[actix_web::get("/report")]
+async fn get_report(report_request: web::Json<dto::ReportRequest>, data: AppData) -> HttpResponse {
     let socket = SmartSocket::new(
-        &declare_socket_request.name,
-        &declare_socket_request.description,
-        declare_socket_request.is_on,
-        declare_socket_request.current_power,
+        &report_request.socket.name,
+        &report_request.socket.description,
+        report_request.socket.is_on,
+        report_request.socket.current_power,
     );
-    data.declared_sockets
-        .write()
-        .unwrap()
-        .insert(socket.name().to_owned(), socket);
 
-    HttpResponse::Ok().json(dto::DeclareSocketResponse {
-        name: declare_socket_request.name.clone(),
-        description: declare_socket_request.description.clone(),
-        is_on: declare_socket_request.is_on,
-        current_power: declare_socket_request.current_power,
-    })
-}
-
-#[actix_web::post("/devices/thermometer/declare")]
-async fn declare_thermometer(
-    declare_thermometer_request: web::Json<dto::DeclareThermometerRequest>,
-    data: AppData,
-) -> HttpResponse {
     let thermometer = SmartThermometer::new(
-        &declare_thermometer_request.name,
-        &declare_thermometer_request.description,
-        declare_thermometer_request.current_temperature,
+        &report_request.thermometer.name,
+        &report_request.thermometer.description,
+        report_request.thermometer.current_temperature,
     );
-    data.declared_thermometers
-        .write()
+
+    let info_provider = BorrowingDeviceInfoProvider::new(&socket, &thermometer);
+    let report_result = data
+        .smart_house
+        .read()
         .unwrap()
-        .insert(thermometer.name().to_owned(), thermometer);
+        .create_report(&info_provider);
 
-    HttpResponse::Ok().json(dto::DeclareThermometerResponse {
-        name: declare_thermometer_request.name.clone(),
-        description: declare_thermometer_request.description.clone(),
-        current_temperature: declare_thermometer_request.current_temperature,
-    })
+    match report_result {
+        Ok(report) => HttpResponse::Ok().json(dto::ReportSuccessResponse { report }),
+        Err(error) => HttpResponse::Ok().json(dto::ReportErrorResponse {
+            error: error.to_string(),
+        }),
+    }
 }
-
-// TODO: Report methhod
-// Take a list of device names, find among declared devices
-// If device not declared then delcare it with description "Undeclared device"
-// Then build a report using selected declared devices

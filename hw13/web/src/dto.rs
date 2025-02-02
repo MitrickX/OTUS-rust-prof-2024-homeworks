@@ -74,3 +74,34 @@ pub struct DeclareThermometerResponse {
     pub description: String,
     pub current_temperature: f64,
 }
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct SocketModel {
+    pub name: String,
+    pub description: String,
+    pub is_on: bool,
+    pub current_power: f64,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct ThermometerModel {
+    pub name: String,
+    pub description: String,
+    pub current_temperature: f64,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct ReportRequest {
+    pub socket: SocketModel,
+    pub thermometer: ThermometerModel,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct ReportSuccessResponse {
+    pub report: String,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct ReportErrorResponse {
+    pub error: String,
+}
