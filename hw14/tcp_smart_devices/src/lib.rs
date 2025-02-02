@@ -10,6 +10,7 @@ pub enum Command {
     SmartSocketOn,
     SmartSocketOff,
     SmartSocketInfo,
+    SmartSocketState,
 }
 
 #[derive(Debug, PartialEq)]
@@ -23,6 +24,7 @@ pub fn encode_request(request: Request) -> String {
         Command::SmartSocketOn => "on".to_owned(),
         Command::SmartSocketOff => "off".to_owned(),
         Command::SmartSocketInfo => "info".to_owned(),
+        Command::SmartSocketState => "state".to_owned(),
     }
 }
 
@@ -31,6 +33,7 @@ pub fn decode_request(request: &str) -> Option<Request> {
         "on" => Some(Request(Command::SmartSocketOn)),
         "off" => Some(Request(Command::SmartSocketOff)),
         "info" => Some(Request(Command::SmartSocketInfo)),
+        "state" => Some(Request(Command::SmartSocketState)),
         _ => None,
     }
 }
@@ -65,13 +68,26 @@ pub trait Server {
 
 impl Server for TcpSmartSocket {
     fn handle(&mut self, request: Request) -> Response {
-        match request.0 {
-            Command::SmartSocketOn => self.socket.turn_on(),
-            Command::SmartSocketOff => self.socket.turn_off(),
-            Command::SmartSocketInfo => (),
-        }
-
-        Response(format!("{}", self.socket))
+        Response(match request.0 {
+            Command::SmartSocketOn => {
+                self.socket.turn_on();
+                format!("{}", self.socket)
+            }
+            Command::SmartSocketOff => {
+                self.socket.turn_off();
+                format!("{}", self.socket)
+            }
+            Command::SmartSocketInfo => {
+                format!("{}", self.socket)
+            }
+            Command::SmartSocketState => {
+                if self.socket.is_on() {
+                    "on".to_owned()
+                } else {
+                    "off".to_owned()
+                }
+            }
+        })
     }
 
     fn serve(&mut self, addr: &str) -> Result<(), Box<dyn std::error::Error>> {
@@ -116,6 +132,13 @@ impl TcpSmartSocketClient {
     pub fn get_info(&mut self) -> Result<String, RequestError> {
         let request = encode_request(Request(Command::SmartSocketInfo));
         self.stp.send_request(request)
+    }
+
+    pub fn is_on(&mut self) -> Result<bool, RequestError> {
+        let request = encode_request(Request(Command::SmartSocketState));
+        let response = self.stp.send_request(request)?;
+
+        Ok(response == "on")
     }
 
     /// Включаем розетку
@@ -199,5 +222,22 @@ Current state: on, 233.3 Volts"#
             ),
             result
         );
+    }
+
+    #[test]
+    fn serve_state() {
+        let mut tcp_smart_socket = TcpSmartSocket::new(
+            "tcp_smart_socket",
+            "this is smart socket works by tcp protocol",
+            true,
+            233.3,
+        );
+
+        let result = tcp_smart_socket.handle(Request(Command::SmartSocketState));
+        assert_eq!(Response("on".to_owned()), result);
+
+        let _ = tcp_smart_socket.handle(Request(Command::SmartSocketOff));
+        let result = tcp_smart_socket.handle(Request(Command::SmartSocketState));
+        assert_eq!(Response("off".to_owned()), result);
     }
 }

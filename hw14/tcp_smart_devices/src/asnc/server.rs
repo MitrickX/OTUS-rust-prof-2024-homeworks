@@ -58,13 +58,26 @@ async fn serve(
 }
 
 async fn handle_request(socket: Arc<RwLock<SmartSocket>>, request: Request) -> Response {
-    match request.0 {
-        Command::SmartSocketOn => socket.clone().write().await.turn_on(),
-        Command::SmartSocketOff => socket.clone().write().await.turn_off(),
-        Command::SmartSocketInfo => (),
-    }
-
-    Response(format!("{}", socket.clone().read().await))
+    Response(match request.0 {
+        Command::SmartSocketOn => {
+            socket.clone().write().await.turn_on();
+            format!("{}", socket.clone().read().await)
+        }
+        Command::SmartSocketOff => {
+            socket.clone().write().await.turn_off();
+            format!("{}", socket.clone().read().await)
+        }
+        Command::SmartSocketInfo => {
+            format!("{}", socket.clone().read().await)
+        }
+        Command::SmartSocketState => {
+            if socket.clone().read().await.is_on() {
+                "on".to_owned()
+            } else {
+                "off".to_owned()
+            }
+        }
+    })
 }
 
 async fn handle_connection(socket: Arc<RwLock<SmartSocket>>, mut connection: StpConnection) {
@@ -143,7 +156,7 @@ Current state: off, 230 Volts"#
     }
 
     #[tokio::test]
-    async fn serve_turn_info() {
+    async fn serve_info() {
         let tcp_smart_socket = AsyncTcpSmartSocket::new(
             "tcp_smart_socket",
             "this is smart socket works by tcp protocol",
@@ -166,5 +179,37 @@ Current state: on, 233.3 Volts"#
             ),
             result
         );
+    }
+
+    #[tokio::test]
+    async fn serve_state() {
+        let tcp_smart_socket = AsyncTcpSmartSocket::new(
+            "tcp_smart_socket",
+            "this is smart socket works by tcp protocol",
+            true,
+            233.3,
+        );
+
+        let result = handle_request(
+            tcp_smart_socket.inner.clone(),
+            Request(Command::SmartSocketState),
+        )
+        .await;
+
+        assert_eq!(Response("on".to_owned()), result);
+
+        _ = handle_request(
+            tcp_smart_socket.inner.clone(),
+            Request(Command::SmartSocketOff),
+        )
+        .await;
+
+        let result = handle_request(
+            tcp_smart_socket.inner.clone(),
+            Request(Command::SmartSocketState),
+        )
+        .await;
+
+        assert_eq!(Response("off".to_owned()), result);
     }
 }

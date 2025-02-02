@@ -8,4 +8,5 @@ members = [
     "tcp_smart_devices",
     "udp_smart_devices",
     "web",
+    "gui"
 ]
